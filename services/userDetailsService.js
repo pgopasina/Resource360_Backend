@@ -21,7 +21,7 @@ var userReg = async (req, res) => {
   } catch (error) {
     res.status(401).send({
       Message: "Unable to Register the User",
-      data: error,
+      Error: error,
     });
   }
 };
