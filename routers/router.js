@@ -11,6 +11,8 @@ router.get("/fatchAll", userDetails.fatchAllUsers);
 router.post("/login", userDetails.userLogin);
 
 // Resource Status
+router.post("/dailyStatus", ResourceStatus.getDailyStatus)
+router.post("/allStatus/:username", ResourceStatus.fatchAllStatus);
 router.post("/status", ResourceStatus.createResourceStatus)
 
 module.exports = router;
