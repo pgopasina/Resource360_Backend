@@ -11,9 +11,8 @@ var userReg = async (req, res) => {
       email: req.body.email,
       password: req.body.password,
       reportsTo: req.body.reportsTo,
+      shiftTime: req.body.shiftTime,
     });
-
-    console.log("userDetails", userDetails);
     res.send({
       Message: "User Registered Successfully",
       Data: userDetails,
@@ -41,6 +40,7 @@ var fatchAllUsers = async (req, res) => {
           email: singleUser.email ? singleUser.email : "",
           password: singleUser.password ? singleUser.password : "",
           reportsTo: singleUser.reportsTo ? singleUser.reportsTo : "",
+          shiftTime: singleUser.shiftTime ? singleUser.shiftTime : "",
         }));
         res.status(200).send(user);
       }
@@ -67,6 +67,7 @@ var userLogin = async (req, res) => {
             designation: response.designation ? response.designation : "",
             email: response.email ? response.email : "",
             reportsTo: response.reportsTo ? response.reportsTo : "",
+            shiftTime: response.shiftTime ? response.shiftTime : "",
           },
         });
       } else {
@@ -74,14 +75,11 @@ var userLogin = async (req, res) => {
       }
     })
     .catch((error) => {
-      res
-        .status(500)
-        .send({
-          message: "An error occurred during login",
-          error: error.message,
-        });
+      res.status(500).send({
+        message: "An error occurred during login",
+        error: error.message,
+      });
     });
 };
 
 module.exports = { userReg, fatchAllUsers, userLogin };
-

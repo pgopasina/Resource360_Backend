@@ -33,6 +33,10 @@ var userSchema = Connection.define(
       type: Sequelize.STRING,
       allowNull: false,
     },
+    shiftTime: {
+      type: Sequelize.STRING,
+      allowNull: false,
+    },
   },
   { timestamps: false } // Disables `createdAt` and `updatedAt`
 );
