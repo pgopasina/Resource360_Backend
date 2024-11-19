@@ -21,17 +21,29 @@ var createResourceStatus = async (req,res)=>{
     }
 };
 
-var fatchAllStatus = async (req,res)=>{
+var fatchAllStatus = async (req, res) => {
     try {
-        var allResourceStatus = await resourceStatus.findOne({where:{username:req.query.username}});
+        if (!req.params.username) {
+            return res.status(400).send({
+                message: "Username required",
+            });
+        }
+        const allResourceStatus = await resourceStatus.findAll({ where: { username: req.params.username } });
+        if (allResourceStatus.length === 0) {
+            return res.status(404).send({
+                message: "No status found for the provided username",
+            });
+        }
         res.status(200).send(allResourceStatus);
     } catch (error) {
-        res.status(401).send({
-            message:"Unable get your Status",
-            Error: error
+        console.error("Error fetching status:", error);
+        res.status(500).send({
+            message: "Unable to fetch status",
+            Error: error.message || JSON.stringify(error),
         });
     }
-}
+};
+
 
 var getDailyStatus = async (req, res) => {
     try {
