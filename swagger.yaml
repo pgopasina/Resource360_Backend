@@ -28,7 +28,7 @@ paths:
           description: "User registered successfully"
         "401":
           description: "Failed to register the user"
-  /fatchAll:
+  /fetchAll:
     get:
       summary: "Fetch all users"
       description: "Retrieve all registered users"
