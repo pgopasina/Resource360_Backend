@@ -25,7 +25,7 @@ var userReg = async (req, res) => {
   }
 };
 
-var fatchAllUsers = async (req, res) => {
+var fetchAllUsers = async (req, res) => {
   await userSchema
     .findAll()
     .then(async (user) => {
@@ -53,23 +53,40 @@ var fatchAllUsers = async (req, res) => {
 var userLogin = async (req, res) => {
   await userSchema
     .findOne({ where: { email: req.body.email } })
-    .then((response) => {
+    .then(async (response) => {
       if (!response) {
         return res.status(404).send("User not found");
       }
       if (req.body.password === response.password) {
-        res.send({
-          message: `'${response.fullname}' Login Successfully`,
-          user_details: {
-            id: response.id ? response.id : "",
-            fullname: response.fullname ? response.fullname : "",
-            username: response.username ? response.username : "",
-            designation: response.designation ? response.designation : "",
-            email: response.email ? response.email : "",
-            reportsTo: response.reportsTo ? response.reportsTo : "",
-            shiftTime: response.shiftTime ? response.shiftTime : "",
-          },
-        });
+        if (response.designation === "Project Manager") {
+          await userSchema
+            .findAll({ where: { reportsTo: response.fullname } })
+            .then((resourceData) => {
+              res.send({
+                message: `'${response.fullname}' Login Successfully`,
+                user_details: {
+                  fullname: response.fullname ? response.fullname : "",
+                  username: response.username ? response.username : "",
+                  designation: response.designation ? response.designation : "",
+                  allResource: resourceData ? resourceData : "",
+                },
+              });
+            });
+        } else {
+          console.log("hello user");
+          res.send({
+            message: `'${response.fullname}' Login Successfully`,
+            user_details: {
+              id: response.id ? response.id : "",
+              fullname: response.fullname ? response.fullname : "",
+              username: response.username ? response.username : "",
+              designation: response.designation ? response.designation : "",
+              email: response.email ? response.email : "",
+              reportsTo: response.reportsTo ? response.reportsTo : "",
+              shiftTime: response.shiftTime ? response.shiftTime : "",
+            },
+          });
+        }
       } else {
         res.status(401).send("Wrong credentials");
       }
@@ -82,4 +99,4 @@ var userLogin = async (req, res) => {
     });
 };
 
-module.exports = { userReg, fatchAllUsers, userLogin };
+module.exports = { userReg, fetchAllUsers, userLogin };
