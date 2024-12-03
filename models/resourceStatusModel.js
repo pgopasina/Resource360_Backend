@@ -1,28 +1,37 @@
 var Sequelize = require("sequelize");
 var Connection = require("../connection");
-const resourceStatus = Connection.define( "resource_status",
-    {
-      id: {
-        type: Sequelize.INTEGER,
-        autoIncrement: true,
-        primaryKey: true,
-      },
-      username: {
-        type: Sequelize.STRING,
-        allowNull: false,
-      },
-      date: {
-        type: Sequelize.DATEONLY,
-        allowNull: false,
-      },
-      status: {
-        type: Sequelize.JSON, // JSON data type
-        allowNull: false,
-      },
+const resourceStatus = Connection.define(
+  "resource_status",
+  {
+    id: {
+      type: Sequelize.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
     },
-    {
-        tableName: 'resource_status',
-        timestamps: false, // Disables `createdAt` and `updatedAt`
-    }
-  );
-  module.exports =  resourceStatus;
+    username: {
+      type: Sequelize.STRING,
+      allowNull: false,
+    },
+    date: {
+      type: Sequelize.DATEONLY,
+      allowNull: false,
+    },
+    status: {
+      type: Sequelize.JSON, // JSON data type
+      allowNull: false,
+    },
+    summary: {
+      type: Sequelize.STRING,
+      allowNull: true,
+    },
+    comments: {
+      type: Sequelize.JSON, // JSON data type
+      allowNull: true,
+    },
+  },
+  {
+    tableName: "resource_status",
+    timestamps: false, // Disables `createdAt` and `updatedAt`
+  }
+);
+module.exports = resourceStatus;
