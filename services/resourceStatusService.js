@@ -86,7 +86,12 @@ var getDailyStatus = async (req, res) => {
       where: { username: req.body.username, date: req.body.date },
     });
 
-    res.status(200).send({ dailyStatus });
+    const summary = await aiSummarizingStatus(dailyStatus.status);
+    await ResourceStatusSchema.update(
+      { summary: summary },
+      { where: { username: req.body.username, date: req.body.date } }
+    );
+    await res.status(200).send({ dailyStatus });
   } catch (error) {
     res.status(401).send({
       message: "Unable Fetch the Daily Status",
@@ -105,14 +110,13 @@ var updateStatus = async (req, res) => {
 
     if (!userExists) {
       return res.status(404).send({
-        message: `User '${req.body.username}' does not exist.`,
+        message: `User '${req.body.username}' does not exist or There is no record on '${req.body.date}'.`,
       });
     }
-    const summary = await aiSummarizingStatus(req.body.status);
     var updateStatus = await ResourceStatusSchema.update(
       {
         status: req.body.status,
-        summary: summary,
+        comments: req.body.comments,
       },
       { where: { username: req.body.username, date: req.body.date } }
     );

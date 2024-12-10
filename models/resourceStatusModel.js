@@ -14,6 +14,7 @@ const resourceStatus = Connection.define(
     },
     date: {
       type: Sequelize.DATEONLY,
+      
       allowNull: false,
     },
     status: {
@@ -21,7 +22,7 @@ const resourceStatus = Connection.define(
       allowNull: false,
     },
     summary: {
-      type: Sequelize.STRING,
+      type: Sequelize.TEXT('long'),
       allowNull: true,
     },
     comments: {
