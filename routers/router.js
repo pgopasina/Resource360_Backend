@@ -14,7 +14,7 @@ router.post("/login", userDetails.userLogin);
 router.post("/dailyStatus", ResourceStatus.getDailyStatus);
 router.post("/allStatus/:username", ResourceStatus.fetchAllStatus);
 router.post("/status", ResourceStatus.createResourceStatus);
-router.put("/editStatus", ResourceStatus.updateStatus);
+// router.put("/editStatus", ResourceStatus.updateStatus);
 router.post("/statusInRange", ResourceStatus.statusInRange);
 
 module.exports = router;

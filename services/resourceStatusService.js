@@ -3,23 +3,59 @@ const resourceStatus = require("../models/resourceStatusModel");
 const ResourceStatusSchema = require("../models/resourceStatusModel");
 const aiSummarizingStatus = require("../services/genaiAPI");
 
-var createResourceStatus = async (req, res) => {
+// var createResourceStatus = async (req, res) => {
+//   try {
+//     var [resourceStatus, statusCreated] = await ResourceStatusSchema.create({
+//       username: req.body.username,
+//       date: new Date().toISOString().split("T")[0],
+//       status: req.body.status,
+//       summary: req.body.summary,
+//       comments: req.body.comments,
+//     });
+//     if (statusCreated) {
+//       res.status(201).json({ message: "Your Status is Saved", resourceStatus });
+//     } else {
+//       res
+//         .status(200)
+//         .json({ message: "Your Status is updated", resourceStatus });
+//     }
+//   } catch (error) {
+//     res.status(401).send({
+//       message: "Unable to save your Status",
+//       Error: error,
+//     });
+//   }
+// };
+
+const createResourceStatus = async (req, res) => {
   try {
-    var resourceStatus = await ResourceStatusSchema.create({
-      username: req.body.username,
-      date: new Date().toISOString().split("T")[0],
-      status: req.body.status,
-      summary: req.body.summary,
-      comments: req.body.comments,
-    });
-    res.status(200).send({
-      Message: "Your Status is Saved",
-      Data: resourceStatus,
-    });
+    const { id, username, status, summary, comments } = req.body;
+
+    const [resourceStatusRecord, statusCreated] =
+      await ResourceStatusSchema.upsert({
+        id: id || undefined,
+        username,
+        date: new Date().toISOString().split("T")[0],
+        status,
+        summary,
+        comments,
+      });
+
+    if (statusCreated) {
+      res.status(201).json({
+        message: "Your Status is Saved",
+        resourceStatus: resourceStatusRecord,
+      });
+    } else {
+      res.status(200).json({
+        message: "Your Status is Updated",
+        resourceStatus: resourceStatusRecord,
+      });
+    }
   } catch (error) {
-    res.status(401).send({
+    res.status(400).send({
       message: "Unable to save your Status",
-      Error: error,
+      error: error.message,
     });
   }
 };
@@ -100,48 +136,48 @@ var getDailyStatus = async (req, res) => {
   }
 };
 
-var updateStatus = async (req, res) => {
-  try {
-    const userExists = await ResourceStatusSchema.findOne({
-      where: { username: req.body.username, date: req.body.date },
-    });
-    //     const lengthOfJSON = Object.keys(userExists.status).length;
-    // console.log("userExists", lengthOfJSON);
+// var updateStatus = async (req, res) => {
+//   try {
+//     const userExists = await ResourceStatusSchema.findOne({
+//       where: { username: req.body.username, date: req.body.date },
+//     });
+//     //     const lengthOfJSON = Object.keys(userExists.status).length;
+//     // console.log("userExists", lengthOfJSON);
 
-    if (!userExists) {
-      return res.status(404).send({
-        message: `User '${req.body.username}' does not exist or There is no record on '${req.body.date}'.`,
-      });
-    }
-    var updateStatus = await ResourceStatusSchema.update(
-      {
-        status: req.body.status,
-        comments: req.body.comments,
-      },
-      { where: { username: req.body.username, date: req.body.date } }
-    );
+//     if (!userExists) {
+//       return res.status(404).send({
+//         message: `User '${req.body.username}' does not exist or There is no record on '${req.body.date}'.`,
+//       });
+//     }
+//     var updateStatus = await ResourceStatusSchema.update(
+//       {
+//         status: req.body.status,
+//         comments: req.body.comments,
+//       },
+//       { where: { username: req.body.username, date: req.body.date } }
+//     );
 
-    if (updateStatus[0] === 1) {
-      res.status(200).send({
-        message: "Successfully Updated Status",
-      });
-    } else {
-      res.status(201).send({
-        message: "There are no changes in the Status",
-      });
-    }
-  } catch (error) {
-    res.status(500).send({
-      message: "Unable to update the Daily Status",
-      Error: error.message,
-    });
-  }
-};
+//     if (updateStatus[0] === 1) {
+//       res.status(200).send({
+//         message: "Successfully Updated Status",
+//       });
+//     } else {
+//       res.status(201).send({
+//         message: "There are no changes in the Status",
+//       });
+//     }
+//   } catch (error) {
+//     res.status(500).send({
+//       message: "Unable to update the Daily Status",
+//       Error: error.message,
+//     });
+//   }
+// };
 
 module.exports = {
   createResourceStatus,
   getDailyStatus,
   fetchAllStatus,
-  updateStatus,
+  // updateStatus,
   statusInRange,
 };
