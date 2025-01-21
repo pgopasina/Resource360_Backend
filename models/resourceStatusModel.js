@@ -14,15 +14,20 @@ const resourceStatus = Connection.define(
     },
     date: {
       type: Sequelize.DATEONLY,
-      
       allowNull: false,
+      unique: true,
+      // defaultValue: Sequelize.NOW, // YYYY-MM-DDTHH:MM:SS.0Z
+      defaultValue: () => {
+        const today = new Date();
+        return today.toISOString().split("T")[0]; // YYYY-MM-DD
+      },
     },
     status: {
       type: Sequelize.JSON, // JSON data type
       allowNull: false,
     },
     summary: {
-      type: Sequelize.TEXT('long'),
+      type: Sequelize.TEXT("long"),
       allowNull: true,
     },
     comments: {

@@ -108,6 +108,7 @@ var userLogin = async (req, res) => {
           name: manager.fullname ? manager.fullname : "",
           username: manager.username ? manager.username : "",
           role: manager.designation ? manager.designation : "",
+          shiftTime: manager.shiftTime ? manager.shiftTime : "",
           leads: managerLeads ? managerLeads : "",
         };
       });
@@ -119,11 +120,11 @@ var userLogin = async (req, res) => {
     } else {
       res.send({
         message: `'${response.fullname}' Login Successfully`,
-        user_details: {
+        data: {
           id: response.id,
           fullname: response.fullname,
           username: response.username,
-          designation: response.designation,
+          role: response.designation,
           email: response.email,
           reportsTo: response.reportsTo,
           shiftTime: response.shiftTime,

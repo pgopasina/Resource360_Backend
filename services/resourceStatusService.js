@@ -35,7 +35,7 @@ const createResourceStatus = async (req, res) => {
       await ResourceStatusSchema.upsert({
         id: id || undefined,
         username,
-        date: new Date().toISOString().split("T")[0],
+        // date: new Date().toISOString().split("T")[0],
         status,
         summary,
         comments,
@@ -54,7 +54,7 @@ const createResourceStatus = async (req, res) => {
     }
   } catch (error) {
     res.status(400).send({
-      message: "Unable to save your Status",
+      message: "Unable to save your Status, Date must be unique",
       error: error.message,
     });
   }
@@ -136,6 +136,28 @@ var getDailyStatus = async (req, res) => {
   }
 };
 
+var deleteStatus = async (req, res) => {
+  try {
+    var dailyStatus = await ResourceStatusSchema.deleteOne({
+      date: req.params.id,
+    });
+
+    if (dailyStatus.deletedCount === 0) {
+      return res.status(404).send({
+        message: "Status not found to delete.",
+      });
+    }
+
+    return res.status(200).send({ message: "Status deleted successfully" });
+  } catch (error) {
+    console.error(error); // Log the full error
+    res.status(500).send({
+      message: "Unable to delete Status",
+      error: error.message || error,
+    });
+  }
+};
+
 // var updateStatus = async (req, res) => {
 //   try {
 //     const userExists = await ResourceStatusSchema.findOne({
@@ -180,4 +202,5 @@ module.exports = {
   fetchAllStatus,
   // updateStatus,
   statusInRange,
+  deleteStatus,
 };
