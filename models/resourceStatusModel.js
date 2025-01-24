@@ -24,7 +24,7 @@ const resourceStatus = Connection.define(
     },
     status: {
       type: Sequelize.JSON, // JSON data type
-      allowNull: false,
+      allowNull: true,
     },
     summary: {
       type: Sequelize.TEXT("long"),

@@ -19,6 +19,7 @@ router.post("/status", ResourceStatus.createResourceStatus);
 router.post("/statusInRange", ResourceStatus.statusInRange);
 router.delete("/delete/:id", ResourceStatus.deleteStatus);
 
+// router.post("/sendmail", sendMail.setEmailDetails);
 router.post("/sendmail", sendMail.sendMail);
 
 module.exports = router;

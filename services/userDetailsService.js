@@ -1,5 +1,6 @@
 const { where } = require("sequelize");
-var userSchema = require("../models/userDetailsModel");
+const userSchema = require("../models/userDetailsModel");
+const ResourceStatusSchema = require("../models/resourceStatusModel");
 const { response } = require("express");
 
 var userReg = async (req, res) => {
@@ -79,13 +80,24 @@ var userLogin = async (req, res) => {
         (resource) => resource.designation === "Jr.Technical associate"
       );
 
+      const date = new Date();
+      date.setDate(date.getDate() - 1);
+      const yesterday = date.toISOString().split("T")[0];
+
+      const allStatuses = await ResourceStatusSchema.findAll({
+        where: {
+          date: yesterday,
+        },
+      });
+
       const managersHierarchy = managers.map((manager) => {
         const managerLeads = leads
-          .filter((lead) => (lead.reportsTo = manager.fullname))
+          .filter((lead) => lead.reportsTo === manager.fullname)
           .map((lead) => {
             const leadResources = resources.filter(
               (resource) => resource.reportsTo === lead.fullname
             );
+
             return {
               name: lead.fullname ? lead.fullname : "",
               username: lead.username ? lead.username : "",
@@ -93,13 +105,20 @@ var userLogin = async (req, res) => {
               email: lead.email ? lead.email : "",
               reportsTo: lead.reportsTo ? lead.reportsTo : "",
               shiftTime: lead.shiftTime ? lead.shiftTime : "",
+              yesterdayStatus:
+                allStatuses.find((summary) => summary.username === lead.username)
+                  ?.summary || "No summary available",
               resources: leadResources.map((resource) => ({
-                name: resource.fullname ? resource.name : "",
+                name: resource.fullname ? resource.fullname : "",
                 username: resource.username ? resource.username : "",
                 role: resource.designation ? resource.designation : "",
                 email: resource.email ? resource.email : "",
                 reportsTo: resource.reportsTo ? resource.reportsTo : "",
                 shiftTime: resource.shiftTime ? resource.shiftTime : "",
+                yesterdayStatus:
+                  allStatuses.find(
+                    (summary) => summary.username === resource.username
+                  )?.summary || "No summary available",
               })),
             };
           });

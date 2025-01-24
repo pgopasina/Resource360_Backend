@@ -29,13 +29,13 @@ const aiSummarizingStatus = require("../services/genaiAPI");
 
 const createResourceStatus = async (req, res) => {
   try {
-    const { id, username, status, summary, comments } = req.body;
+    const { id, username, date, status, summary, comments } = req.body;
 
     const [resourceStatusRecord, statusCreated] =
       await ResourceStatusSchema.upsert({
         id: id || undefined,
         username,
-        // date: new Date().toISOString().split("T")[0],
+        date,
         status,
         summary,
         comments,
