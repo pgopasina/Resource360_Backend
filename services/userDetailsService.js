@@ -106,8 +106,9 @@ var userLogin = async (req, res) => {
               reportsTo: lead.reportsTo ? lead.reportsTo : "",
               shiftTime: lead.shiftTime ? lead.shiftTime : "",
               yesterdayStatus:
-                allStatuses.find((summary) => summary.username === lead.username)
-                  ?.summary || "No summary available",
+                allStatuses.find(
+                  (summary) => summary.username === lead.username
+                )?.summary || "No status available",
               resources: leadResources.map((resource) => ({
                 name: resource.fullname ? resource.fullname : "",
                 username: resource.username ? resource.username : "",
@@ -118,7 +119,7 @@ var userLogin = async (req, res) => {
                 yesterdayStatus:
                   allStatuses.find(
                     (summary) => summary.username === resource.username
-                  )?.summary || "No summary available",
+                  )?.summary || "No status available",
               })),
             };
           });

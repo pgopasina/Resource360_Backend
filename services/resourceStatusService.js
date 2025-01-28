@@ -3,31 +3,7 @@ const resourceStatus = require("../models/resourceStatusModel");
 const ResourceStatusSchema = require("../models/resourceStatusModel");
 const aiSummarizingStatus = require("../services/genaiAPI");
 
-// var createResourceStatus = async (req, res) => {
-//   try {
-//     var [resourceStatus, statusCreated] = await ResourceStatusSchema.create({
-//       username: req.body.username,
-//       date: new Date().toISOString().split("T")[0],
-//       status: req.body.status,
-//       summary: req.body.summary,
-//       comments: req.body.comments,
-//     });
-//     if (statusCreated) {
-//       res.status(201).json({ message: "Your Status is Saved", resourceStatus });
-//     } else {
-//       res
-//         .status(200)
-//         .json({ message: "Your Status is updated", resourceStatus });
-//     }
-//   } catch (error) {
-//     res.status(401).send({
-//       message: "Unable to save your Status",
-//       Error: error,
-//     });
-//   }
-// };
-
-const createResourceStatus = async (req, res) => {
+const upsertResourceStatus = async (req, res) => {
   try {
     const { id, username, date, status, summary, comments } = req.body;
 
@@ -158,7 +134,83 @@ var deleteStatus = async (req, res) => {
   }
 };
 
-// var updateStatus = async (req, res) => {
+const elasticSearchStatus = async (req, res) => {
+  try {
+    const { year, month, username, from, to } = req.body;
+
+    let query = {
+      where: {},
+    };
+
+    // Handle date filtering logic
+    if (year && month) {
+      const startDate = new Date(Date.UTC(year, month - 1, 1)); // Start of the month
+      const endDate = new Date(Date.UTC(year, month, 0)); // Last day of the month
+      query.where.date = {
+        [Op.between]: [
+          startDate.toISOString().split("T")[0],
+          endDate.toISOString().split("T")[0],
+        ],
+      };
+    } else if (from && to) {
+      query.where.date = {
+        [Op.between]: [
+          new Date(from).toISOString().split("T")[0],
+          new Date(to).toISOString().split("T")[0],
+        ],
+      };
+    } else if (year) {
+      const startDate = new Date(Date.UTC(year, 0, 1)); // January 1st
+      const endDate = new Date(Date.UTC(year, 11, 31)); // December 31st
+      query.where.date = {
+        [Op.between]: [
+          startDate.toISOString().split("T")[0],
+          endDate.toISOString().split("T")[0],
+        ],
+      };
+    }
+
+    if (username) {
+      query.where.username = username;
+    }
+    const statuses = await ResourceStatusSchema.findAll(query);
+    res.status(200).json(statuses);
+  } catch (error) {
+    console.error("Error fetching statuses in range:", error);
+    res.status(500).json({
+      message: "Error fetching statuses",
+      error: error.message || error,
+    });
+  }
+};
+
+module.exports = elasticSearchStatus;
+
+// var createResourceStatus = async (req, res) => {
+//   try {
+//     var [resourceStatus, statusCreated] = await ResourceStatusSchema.create({
+//       username: req.body.username,
+//       date: new Date().toISOString().split("T")[0],
+//       status: req.body.status,
+//       summary: req.body.summary,
+//       comments: req.body.comments,
+//     });
+//     if (statusCreated) {
+//       res.status(201).json({ message: "Your Status is Saved", resourceStatus });
+//     } else {
+//       res
+//         .status(200)
+//         .json({ message: "Your Status is updated", resourceStatus });
+//     }
+//   } catch (error) {
+//     res.status(401).send({
+//       message: "Unable to save your Status",
+//       Error: error,
+//     });
+//   }
+// };
+
+// var updateResourceStatus => {
 //   try {
 //     const userExists = await ResourceStatusSchema.findOne({
 //       where: { username: req.body.username, date: req.body.date },
@@ -197,10 +249,12 @@ var deleteStatus = async (req, res) => {
 // };
 
 module.exports = {
-  createResourceStatus,
+  upsertResourceStatus,
   getDailyStatus,
   fetchAllStatus,
-  // updateStatus,
   statusInRange,
   deleteStatus,
+  elasticSearchStatus,
+  // createResourceStatus,
+  // updateResourceStatus,
 };
