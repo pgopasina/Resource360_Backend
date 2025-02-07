@@ -37,9 +37,12 @@ var userSchema = Connection.define(
       type: Sequelize.STRING,
       allowNull: false,
     },
+    HRcontact: {
+      type: Sequelize.STRING,
+      allowNull: false,
+    },
   },
   { timestamps: false } // Disables `createdAt` and `updatedAt`
 );
 
 module.exports = userSchema;
-

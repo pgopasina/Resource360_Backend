@@ -30,7 +30,7 @@ const upsertResourceStatus = async (req, res) => {
     }
   } catch (error) {
     res.status(400).send({
-      message: "Unable to save your Status, Date must be unique",
+      message: "Unable to save your Status",
       error: error.message,
     });
   }
@@ -47,7 +47,7 @@ var fetchAllStatus = async (req, res) => {
       where: { username: req.params.username },
     });
     if (allResourceStatus.length === 0) {
-      return res.status(404).send({
+      return res.status(200).send({
         message: "No status found for the provided username",
       });
     }
@@ -62,29 +62,38 @@ var fetchAllStatus = async (req, res) => {
 };
 
 var statusInRange = async (req, res) => {
-  const { from, to } = req.body;
-  if ((!from || !to) && !req.body.username) {
-    return res
-      .status(400)
-      .json({ Error: "Please provide both dates Range and username." });
-  }
-  try {
-    const statusInRange = await resourceStatus.findAll({
-      where: {
-        date: {
-          [Op.between]: [new Date(from), new Date(to)],
-        },
-        username: req.body.username,
+  const { from, to, username, ...remaining } = req.body;
+  // if ((!from && !to) || !username) {
+  //   return res
+  //     .status(400)
+  //     .json({ Error: "Please provide both dates Range and username." });
+  // }
+  console.log("remaining", req.body);
+
+  let query = {
+    where: {},
+  };
+
+  if (from && to && username) {
+    query.where = {
+      date: {
+        [Op.between]: [new Date(from), new Date(to)],
       },
-    });
+      username: username,
+    };
+  }
+
+  try {
+    const statusInRange = await resourceStatus.findAll(query);
+
     if (statusInRange.length === 0) {
-      return res.status(404).send({
+      return res.status(200).send({
         message: "No status found for the provided username",
       });
     }
     res.status(200).send(statusInRange);
   } catch (error) {
-    console.error("Error while fetching status in Range :", error);
+    console.error("Error while fetching status in Range:", error);
     res.status(500).send({
       message: "Unable to fetch status",
       Error: error.message || JSON.stringify(error),
@@ -98,16 +107,25 @@ var getDailyStatus = async (req, res) => {
       where: { username: req.body.username, date: req.body.date },
     });
 
+    if (!dailyStatus) {
+      console.log("dailyStatus", dailyStatus);
+      return res.status(200).send({
+        username: req.body.username,
+        message: `${req.body.username} User status not posted yet for Today.`,
+      });
+    }
+
     const summary = await aiSummarizingStatus(dailyStatus.status);
     await ResourceStatusSchema.update(
       { summary: summary },
       { where: { username: req.body.username, date: req.body.date } }
     );
+
     await res.status(200).send({ dailyStatus });
   } catch (error) {
-    res.status(401).send({
+    res.status(500).send({
       message: "Unable Fetch the Daily Status",
-      Error: error,
+      Error: error.message || error,
     });
   }
 };
@@ -119,7 +137,7 @@ var deleteStatus = async (req, res) => {
     });
 
     if (dailyStatus.deletedCount === 0) {
-      return res.status(404).send({
+      return res.status(200).send({
         message: "Status not found to delete.",
       });
     }

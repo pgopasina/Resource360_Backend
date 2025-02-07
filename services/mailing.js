@@ -1,5 +1,5 @@
-const nodemailer = require('nodemailer');
-const cfig = require('../config'); // Assuming you have a config file for userPassword
+const nodemailer = require("nodemailer");
+const cfig = require("../config"); // Assuming you have a config file for userPassword
 
 const sendMail = async (req, res) => {
   const { from, to, cc, subject, text } = req.body;
@@ -28,7 +28,9 @@ const sendMail = async (req, res) => {
 
   try {
     const info = await transporter.sendMail({
-      from,
+      from: cfig.userMail,
+      // to: "vmarupu@miraclesoft.com, jadvani@miraclesoft.com",
+      // // cc:"daburi@miraclesoft.com",
       to,
       cc,
       subject,

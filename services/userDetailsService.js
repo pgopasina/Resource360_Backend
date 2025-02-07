@@ -1,4 +1,4 @@
-const { where } = require("sequelize");
+const { Op, where } = require("sequelize");
 const userSchema = require("../models/userDetailsModel");
 const ResourceStatusSchema = require("../models/resourceStatusModel");
 const { response } = require("express");
@@ -14,7 +14,7 @@ var userReg = async (req, res) => {
       reportsTo: req.body.reportsTo,
       shiftTime: req.body.shiftTime,
     });
-    res.send({
+    res.status(200).send({
       Message: "User Registered Successfully",
       Data: userDetails,
     });
@@ -43,7 +43,7 @@ var fetchAllUsers = async (req, res) => {
           reportsTo: singleUser.reportsTo ? singleUser.reportsTo : "",
           shiftTime: singleUser.shiftTime ? singleUser.shiftTime : "",
         }));
-        res.status(200).send(user);
+        res.status(200).send(userDetails);
       }
     })
     .catch((error) => {
@@ -53,33 +53,28 @@ var fetchAllUsers = async (req, res) => {
 
 var userLogin = async (req, res) => {
   try {
-    const response = await userSchema.findOne({
-      where: { email: req.body.email },
+    const { email, password } = req.body;
+    const user = await userSchema.findOne({ where: { email, password } });
+
+    if (!user) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    const managers = await userSchema.findAll({
+      where: { designation: "Project Manager" },
+    });
+    const leads = await userSchema.findAll({
+      where: {
+        designation: {
+          [Op.in]: ["Technical associate", "Sr.Technical associate"],
+        },
+      },
+    });
+    const resources = await userSchema.findAll({
+      where: { designation: "Jr.Technical associate" },
     });
 
-    if (!response) {
-      return res.status(404).send(`${req.body.email} not found`);
-    }
-    if (req.body.password !== response.password) {
-      return res.status(401).send("Wrong credentials");
-    }
-    if (response.designation === "Project Manager") {
-      const allUsers = await userSchema.findAll();
-      const managers = allUsers.filter(
-        (manager) =>
-          manager.designation === "Project Manager" &&
-          manager.email === response.email
-      );
-      const leads = allUsers.filter(
-        (lead) =>
-          (lead.designation === "Sr.Technical associate" ||
-            lead.designation === "Technical associate") &&
-          lead.reportsTo === response.fullname
-      );
-      const resources = allUsers.filter(
-        (resource) => resource.designation === "Jr.Technical associate"
-      );
-
+    if (user.designation === "Project Manager" && user.email === email) {
       const date = new Date();
       date.setDate(date.getDate() - 1);
       const yesterday = date.toISOString().split("T")[0];
@@ -89,66 +84,88 @@ var userLogin = async (req, res) => {
           date: yesterday,
         },
       });
-
-      const managersHierarchy = managers.map((manager) => {
-        const managerLeads = leads
-          .filter((lead) => lead.reportsTo === manager.fullname)
-          .map((lead) => {
-            const leadResources = resources.filter(
-              (resource) => resource.reportsTo === lead.fullname
-            );
-
-            return {
-              name: lead.fullname ? lead.fullname : "",
+      const managersHierarchy = managers
+        .filter((manager) => manager.email === email)
+        .map((manager) => ({
+          fullname: manager.fullname ? manager.fullname : "",
+          username: manager.username ? manager.username : "",
+          role: manager.designation ? manager.designation : "",
+          email: manager.email ? manager.email : "",
+          HRcontact: manager.HRcontact ? manager.HRcontact : "",
+          shiftTime: manager.shiftTime ? manager.shiftTime : "",
+          leads: leads
+            .filter((lead) => lead.reportsTo === manager.fullname)
+            .map((lead) => ({
+              fullname: lead.fullname ? lead.fullname : "",
               username: lead.username ? lead.username : "",
               role: lead.designation ? lead.designation : "",
               email: lead.email ? lead.email : "",
               reportsTo: lead.reportsTo ? lead.reportsTo : "",
+              HRcontact: lead.HRcontact ? lead.HRcontact : "",
               shiftTime: lead.shiftTime ? lead.shiftTime : "",
               yesterdayStatus:
                 allStatuses.find(
-                  (summary) => summary.username === lead.username
+                  (summary) => summary.username === resources.username
                 )?.summary || "No status available",
-              resources: leadResources.map((resource) => ({
-                name: resource.fullname ? resource.fullname : "",
-                username: resource.username ? resource.username : "",
-                role: resource.designation ? resource.designation : "",
-                email: resource.email ? resource.email : "",
-                reportsTo: resource.reportsTo ? resource.reportsTo : "",
-                shiftTime: resource.shiftTime ? resource.shiftTime : "",
-                yesterdayStatus:
-                  allStatuses.find(
-                    (summary) => summary.username === resource.username
-                  )?.summary || "No status available",
-              })),
-            };
-          });
+              resources: resources
+                .filter((resource) => resource.reportsTo === lead.fullname)
+                .map((resource) => ({
+                  fullname: resource.fullname ? resource.fullname : "",
+                  username: resource.username ? resource.username : "",
+                  role: resource.designation ? resource.designation : "",
+                  email: resource.email ? resource.email : "",
+                  reportsTo: resource.reportsTo ? resource.reportsTo : "",
+                  HRcontact: resource.HRcontact ? resource.HRcontact : "",
+                  shiftTime: resource.shiftTime ? resource.shiftTime : "",
+                  yesterdayStatus:
+                    allStatuses.find(
+                      (summary) => summary.username === resources.username
+                    )?.summary || "No status available",
+                })),
+            })),
+        }));
 
-        return {
-          name: manager.fullname ? manager.fullname : "",
-          username: manager.username ? manager.username : "",
-          role: manager.designation ? manager.designation : "",
-          shiftTime: manager.shiftTime ? manager.shiftTime : "",
-          leads: managerLeads ? managerLeads : "",
-        };
-      });
-
-      res.send({
-        message: `'${response.fullname}' Login Successfully`,
+      res.status(200).send({
+        message: `'${user.fullname}' Login Successfully`,
         data: managersHierarchy,
       });
     } else {
-      res.send({
-        message: `'${response.fullname}' Login Successfully`,
-        data: {
-          id: response.id,
-          fullname: response.fullname,
-          username: response.username,
-          role: response.designation,
-          email: response.email,
-          reportsTo: response.reportsTo,
-          shiftTime: response.shiftTime,
-        },
+      let loginUser = leads.filter((lead) => lead.fullname === user.reportsTo);
+      console.log("loginUser", loginUser[0].reportsTo);
+
+      const employeeHierarchy = managers
+        .filter((manager) => manager.fullname === loginUser[0].reportsTo)
+        .map((manager) => ({
+          fullname: manager.fullname ? manager.fullname : "",
+          username: manager.username ? manager.username : "",
+          role: manager.designation ? manager.designation : "",
+          email: manager.email ? manager.email : "",
+          HRcontact: manager.HRcontact ? manager.HRcontact : "",
+          lead: leads
+            .filter((lead) => user.reportsTo === lead.fullname)
+            .map((lead) => ({
+              fullname: lead.fullname ? lead.fullname : "",
+              username: lead.username ? lead.username : "",
+              role: lead.designation ? lead.designation : "",
+              email: lead.email ? lead.email : "",
+              reportsTo: lead.reportsTo ? lead.reportsTo : "",
+              HRcontact: lead.HRcontact ? lead.HRcontact : "",
+              resource: resources
+                .filter((resource) => resource.email === user.email)
+                .map((resource) => ({
+                  fullname: resource.fullname ? resource.fullname : "",
+                  username: resource.username ? resource.username : "",
+                  role: resource.designation ? resource.designation : "",
+                  email: resource.email ? resource.email : "",
+                  reportsTo: resource.reportsTo ? resource.reportsTo : "",
+                  HRcontact: resource.HRcontact ? resource.HRcontact : "",
+                  shiftTime: resource.shiftTime ? resource.shiftTime : "",
+                })),
+            })),
+        }));
+      res.status(200).send({
+        message: `'${user.fullname}' Login Successfully`,
+        data: employeeHierarchy,
       });
     }
   } catch (error) {
@@ -159,4 +176,23 @@ var userLogin = async (req, res) => {
   }
 };
 
-module.exports = { userReg, fetchAllUsers, userLogin };
+var userEmails = async (req, res) => {
+  try {
+    let allUsersData = await userSchema.findAll();
+    let allEmails = allUsersData.map((mail) => ({
+      email: mail.email ? mail.email : "",
+    }));
+
+    res.status(200).send({
+      message: "All Resource Mails",
+      Data: allEmails,
+    });
+  } catch (error) {
+    res.status(500).send({
+      message: "An error occurred while fetching resource emails",
+      error: error.message || "Internal Server Error",
+    });
+  }
+};
+
+module.exports = { userReg, fetchAllUsers, userLogin, userEmails };

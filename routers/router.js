@@ -7,13 +7,14 @@ const sendMail = require("../services/mailing");
 // User Registeration
 router.post("/details", userDetails.userReg);
 router.get("/fetchAll", userDetails.fetchAllUsers);
+router.get("/allMails", userDetails.userEmails);
 
 // User Login
 router.post("/login", userDetails.userLogin);
 
 // Resource Status
 router.post("/dailyStatus", ResourceStatus.getDailyStatus);
-router.post("/allStatus/:username", ResourceStatus.fetchAllStatus);
+router.get("/allStatus/:username", ResourceStatus.fetchAllStatus);
 router.post("/status", ResourceStatus.upsertResourceStatus);
 router.post("/statusInRange", ResourceStatus.statusInRange);
 router.delete("/delete/:id", ResourceStatus.deleteStatus);

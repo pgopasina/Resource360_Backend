@@ -15,7 +15,6 @@ const resourceStatus = Connection.define(
     date: {
       type: Sequelize.DATEONLY,
       allowNull: false,
-      unique: true,
       // defaultValue: Sequelize.NOW, // YYYY-MM-DDTHH:MM:SS.0Z
       defaultValue: () => {
         const today = new Date();
