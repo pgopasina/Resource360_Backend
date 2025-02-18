@@ -37,8 +37,6 @@ const sendMail = async (req, res) => {
       text,
     });
 
-    console.log("Email sent:", info);
-
     res.status(200).json({
       message: "Mail sent successfully",
       info: info,

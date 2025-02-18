@@ -2,6 +2,7 @@ const { Op } = require("sequelize");
 const resourceStatus = require("../models/resourceStatusModel");
 const ResourceStatusSchema = require("../models/resourceStatusModel");
 const aiSummarizingStatus = require("../services/genaiAPI");
+const userSchema = require("../models/userDetailsModel");
 
 const upsertResourceStatus = async (req, res) => {
   try {
@@ -62,13 +63,12 @@ var fetchAllStatus = async (req, res) => {
 };
 
 var statusInRange = async (req, res) => {
-  const { from, to, username, ...remaining } = req.body;
+  const { from, to, username } = req.body;
   // if ((!from && !to) || !username) {
   //   return res
   //     .status(400)
   //     .json({ Error: "Please provide both dates Range and username." });
   // }
-  console.log("remaining", req.body);
 
   let query = {
     where: {},
@@ -81,17 +81,49 @@ var statusInRange = async (req, res) => {
       },
       username: username,
     };
+  } else if (from && to) {
+    query.where.date = {
+      [Op.between]: [
+        new Date(from).toISOString().split("T")[0],
+        new Date(to).toISOString().split("T")[0],
+      ],
+    };
   }
 
   try {
     const statusInRange = await resourceStatus.findAll(query);
-
     if (statusInRange.length === 0) {
       return res.status(200).send({
         message: "No status found for the provided username",
       });
     }
-    res.status(200).send(statusInRange);
+    // Fetch user details for all unique usernames in statuses
+    const usernames = [
+      ...new Set(statusInRange.map((status) => status.username)),
+    ];
+    const userDetails = await userSchema.findAll({
+      where: {
+        username: {
+          [Op.in]: usernames,
+        },
+      },
+    });
+
+    // Create a map of usernames to fullnames
+    const userMap = userDetails.reduce((map, user) => {
+      map[user.username] = user.fullname;
+      return map;
+    }, {});
+
+    // Add fullname to each status
+    const statusesWithFullname = statusInRange.map((status) => ({
+      ...status.toJSON(),
+      fullname: userMap[status.username] || "",
+    }));
+
+    res.status(200).send(statusesWithFullname);
+
+    // res.status(200).send(statusInRange);
   } catch (error) {
     console.error("Error while fetching status in Range:", error);
     res.status(500).send({
@@ -106,9 +138,7 @@ var getDailyStatus = async (req, res) => {
     var dailyStatus = await ResourceStatusSchema.findOne({
       where: { username: req.body.username, date: req.body.date },
     });
-
     if (!dailyStatus) {
-      console.log("dailyStatus", dailyStatus);
       return res.status(200).send({
         username: req.body.username,
         message: `${req.body.username} User status not posted yet for Today.`,
@@ -120,8 +150,17 @@ var getDailyStatus = async (req, res) => {
       { summary: summary },
       { where: { username: req.body.username, date: req.body.date } }
     );
+    // Fetch user details to get fullname
+    const userDetails = await userSchema.findOne({
+      where: { username: req.body.username },
+    });
 
-    await res.status(200).send({ dailyStatus });
+    const fullname = userDetails ? userDetails.fullname : "";
+
+    res.status(200).send({
+      ...dailyStatus.toJSON(),
+      fullname: fullname,
+    });
   } catch (error) {
     res.status(500).send({
       message: "Unable Fetch the Daily Status",
@@ -152,7 +191,7 @@ var deleteStatus = async (req, res) => {
   }
 };
 
-const elasticSearchStatus = async (req, res) => {
+var elasticSearchStatus = async (req, res) => {
   try {
     const { year, month, username, from, to } = req.body;
 
@@ -191,8 +230,32 @@ const elasticSearchStatus = async (req, res) => {
     if (username) {
       query.where.username = username;
     }
+
     const statuses = await ResourceStatusSchema.findAll(query);
-    res.status(200).json(statuses);
+
+    // Fetch user details for all unique usernames in statuses
+    const usernames = [...new Set(statuses.map((status) => status.username))];
+    const userDetails = await userSchema.findAll({
+      where: {
+        username: {
+          [Op.in]: usernames,
+        },
+      },
+    });
+
+    // Create a map of usernames to fullnames
+    const userMap = userDetails.reduce((map, user) => {
+      map[user.username] = user.fullname;
+      return map;
+    }, {});
+
+    // Add fullname to each status
+    const statusesWithFullname = statuses.map((status) => ({
+      ...status.toJSON(),
+      fullname: userMap[status.username] || "",
+    }));
+
+    res.status(200).send(statusesWithFullname);
   } catch (error) {
     console.error("Error fetching statuses in range:", error);
     res.status(500).json({
@@ -201,8 +264,6 @@ const elasticSearchStatus = async (req, res) => {
     });
   }
 };
-
-module.exports = elasticSearchStatus;
 
 // var createResourceStatus = async (req, res) => {
 //   try {
@@ -234,7 +295,6 @@ module.exports = elasticSearchStatus;
 //       where: { username: req.body.username, date: req.body.date },
 //     });
 //     //     const lengthOfJSON = Object.keys(userExists.status).length;
-//     // console.log("userExists", lengthOfJSON);
 
 //     if (!userExists) {
 //       return res.status(404).send({

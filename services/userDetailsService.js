@@ -63,6 +63,7 @@ var userLogin = async (req, res) => {
     const managers = await userSchema.findAll({
       where: { designation: "Project Manager" },
     });
+
     const leads = await userSchema.findAll({
       where: {
         designation: {
@@ -105,7 +106,7 @@ var userLogin = async (req, res) => {
               shiftTime: lead.shiftTime ? lead.shiftTime : "",
               yesterdayStatus:
                 allStatuses.find(
-                  (summary) => summary.username === resources.username
+                  (summary) => summary.username === lead.username
                 )?.summary || "No status available",
               resources: resources
                 .filter((resource) => resource.reportsTo === lead.fullname)
@@ -119,7 +120,7 @@ var userLogin = async (req, res) => {
                   shiftTime: resource.shiftTime ? resource.shiftTime : "",
                   yesterdayStatus:
                     allStatuses.find(
-                      (summary) => summary.username === resources.username
+                      (summary) => summary.username === resource.username
                     )?.summary || "No status available",
                 })),
             })),
@@ -127,11 +128,41 @@ var userLogin = async (req, res) => {
 
       res.status(200).send({
         message: `'${user.fullname}' Login Successfully`,
+        logUserRole: user.designation,
         data: managersHierarchy,
+      });
+    } else if (
+      (user.designation === "Technical associate" ||
+        user.designation === "Sr.Technical associate") &&
+      user.email === email
+    ) {
+      const leadHierarchy = managers
+        .filter((manager) => manager.fullname === user.reportsTo)
+        .map((manager) => ({
+          fullname: manager.fullname ? manager.fullname : "",
+          username: manager.username ? manager.username : "",
+          role: manager.designation ? manager.designation : "",
+          email: manager.email ? manager.email : "",
+          HRcontact: manager.HRcontact ? manager.HRcontact : "",
+          lead: leads
+            .filter((lead) => user.email === lead.email)
+            .map((lead) => ({
+              fullname: lead.fullname ? lead.fullname : "",
+              username: lead.username ? lead.username : "",
+              role: lead.designation ? lead.designation : "",
+              email: lead.email ? lead.email : "",
+              reportsTo: lead.reportsTo ? lead.reportsTo : "",
+              HRcontact: lead.HRcontact ? lead.HRcontact : "",
+              shiftTime: lead.shiftTime ? lead.shiftTime : "",
+            })),
+        }));
+      res.status(200).send({
+        message: `'${user.fullname}' Login Successfully`,
+        logUserRole: user.designation,
+        data: leadHierarchy,
       });
     } else {
       let loginUser = leads.filter((lead) => lead.fullname === user.reportsTo);
-      console.log("loginUser", loginUser[0].reportsTo);
 
       const employeeHierarchy = managers
         .filter((manager) => manager.fullname === loginUser[0].reportsTo)
@@ -165,6 +196,7 @@ var userLogin = async (req, res) => {
         }));
       res.status(200).send({
         message: `'${user.fullname}' Login Successfully`,
+        logUserRole: user.designation,
         data: employeeHierarchy,
       });
     }
@@ -195,4 +227,60 @@ var userEmails = async (req, res) => {
   }
 };
 
-module.exports = { userReg, fetchAllUsers, userLogin, userEmails };
+var userNames = async (req, res) => {
+  try {
+    if (!req.params.username) {
+      return res.status(400).send({
+        message: "Username required",
+      });
+    }
+
+    const manager = await userSchema.findOne({
+      where: { username: req.params.username },
+    });
+
+    if (!manager) {
+      return res.status(404).send({
+        message: "Manager not found",
+      });
+    }
+
+    const leads = await userSchema.findAll({
+      where: { reportsTo: manager.fullname },
+    });
+
+    const leadFullname = [...new Set(leads.map((lead) => lead.fullname))];
+    const userDetails = await userSchema.findAll({
+      where: {
+        reportsTo: {
+          [Op.in]: leadFullname,
+        },
+      },
+    });
+
+    // Flatten the structure
+    const result = [
+      {
+        fullname: manager.fullname,
+        username: manager.username,
+      },
+      ...leads.map((lead) => ({
+        fullname: lead.fullname,
+        username: lead.username,
+      })),
+      ...userDetails.map((resource) => ({
+        fullname: resource.fullname,
+        username: resource.username,
+      })),
+    ];
+
+    res.status(200).send(result);
+  } catch (error) {
+    res.status(500).send({
+      message: "An error occurred while fetching User Names",
+      error: error.message || "Internal Server Error",
+    });
+  }
+};
+
+module.exports = { userReg, fetchAllUsers, userLogin, userEmails, userNames };

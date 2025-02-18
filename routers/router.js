@@ -3,11 +3,13 @@ const router = express.Router();
 const userDetails = require("../services/userDetailsService");
 const ResourceStatus = require("../services/resourceStatusService");
 const sendMail = require("../services/mailing");
+const comments = require("../services/commentsService");
 
 // User Registeration
 router.post("/details", userDetails.userReg);
 router.get("/fetchAll", userDetails.fetchAllUsers);
 router.get("/allMails", userDetails.userEmails);
+router.get("/userNames/:username", userDetails.userNames);
 
 // User Login
 router.post("/login", userDetails.userLogin);
@@ -24,5 +26,8 @@ router.post("/elasticSearch", ResourceStatus.elasticSearchStatus);
 
 // router.post("/sendmail", sendMail.setEmailDetails);
 router.post("/sendmail", sendMail.sendMail);
+router.post("/comment", comments.upsertComments);
+router.get("/comments/:date", comments.fetchAllStatus);
+// router.post("/comments", comments.fetchAllStatus);
 
 module.exports = router;

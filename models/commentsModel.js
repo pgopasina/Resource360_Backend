@@ -1,14 +1,14 @@
 var Sequelize = require("sequelize");
 var Connection = require("../connection");
-const resourceStatus = Connection.define(
-  "resource_status",
+const comments = Connection.define(
+  "comments",
   {
     id: {
       type: Sequelize.INTEGER,
       autoIncrement: true,
       primaryKey: true,
     },
-    username: {
+    senderName: {
       type: Sequelize.STRING,
       allowNull: false,
     },
@@ -21,22 +21,25 @@ const resourceStatus = Connection.define(
       //   return today.toISOString().split("T")[0]; // YYYY-MM-DD
       // },
     },
-    status: {
-      type: Sequelize.JSON, // JSON data type
-      allowNull: true,
-    },
-    summary: {
-      type: Sequelize.TEXT("long"),
-      allowNull: true,
+    statusSlot: {
+      type: Sequelize.STRING,
+      allowNull: false,
     },
     comments: {
-      type: Sequelize.JSON, // JSON data type
-      allowNull: true,
+      type: Sequelize.TEXT("long"),
+      allowNull: false,
+    },
+    commentTime: {
+      type: Sequelize.STRING,
+      allowNull: false,
+    },
+    receiverName: {
+      type: Sequelize.STRING,
+      allowNull: false,
     },
   },
   {
-    tableName: "resource_status",
     timestamps: false, // Disables `createdAt` and `updatedAt`
   }
 );
-module.exports = resourceStatus;
+module.exports = comments;

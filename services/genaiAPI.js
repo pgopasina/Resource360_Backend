@@ -8,7 +8,6 @@ async function aiSummarizingStatus(hourlyStatus) {
 
     // Check if hourlyStatus is valid and non-empty
     if (!hourlyStatus || Object.keys(hourlyStatus).length === 0) {
-      console.log("Hourly status is empty. No summary will be generated.");
       return "No hourly status updates provided. Unable to generate a summary.";
     }
 
