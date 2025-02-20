@@ -10,6 +10,7 @@ router.post("/details", userDetails.userReg);
 router.get("/fetchAll", userDetails.fetchAllUsers);
 router.get("/allMails", userDetails.userEmails);
 router.get("/userNames/:username", userDetails.userNames);
+router.get("/userHierarchy/:username", userDetails.userHierarchy);
 
 // User Login
 router.post("/login", userDetails.userLogin);

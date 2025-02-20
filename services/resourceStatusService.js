@@ -6,7 +6,7 @@ const userSchema = require("../models/userDetailsModel");
 
 const upsertResourceStatus = async (req, res) => {
   try {
-    const { id, username, date, status, summary, comments } = req.body;
+    const { id, username, date, status, summary } = req.body;
 
     const [resourceStatusRecord, statusCreated] =
       await ResourceStatusSchema.upsert({
@@ -15,7 +15,6 @@ const upsertResourceStatus = async (req, res) => {
         date,
         status,
         summary,
-        comments,
       });
 
     if (statusCreated) {
@@ -32,7 +31,7 @@ const upsertResourceStatus = async (req, res) => {
   } catch (error) {
     res.status(400).send({
       message: "Unable to save your Status",
-      error: error.message,
+      error: error.message || "Internal Server Error",
     });
   }
 };
@@ -74,6 +73,10 @@ var statusInRange = async (req, res) => {
     where: {},
   };
 
+  if (username) {
+    query.where = { username: username };
+  }
+
   if (from && to && username) {
     query.where = {
       date: {
@@ -81,12 +84,22 @@ var statusInRange = async (req, res) => {
       },
       username: username,
     };
-  } else if (from && to) {
+  }
+
+  if (from && to) {
     query.where.date = {
       [Op.between]: [
         new Date(from).toISOString().split("T")[0],
         new Date(to).toISOString().split("T")[0],
       ],
+    };
+  } else if (from) {
+    query.where.date = {
+      [Op.gte]: new Date(from).toISOString().split("T")[0],
+    };
+  } else if (to) {
+    query.where.date = {
+      [Op.lte]: new Date(to).toISOString().split("T")[0],
     };
   }
 
@@ -272,7 +285,6 @@ var elasticSearchStatus = async (req, res) => {
 //       date: new Date().toISOString().split("T")[0],
 //       status: req.body.status,
 //       summary: req.body.summary,
-//       comments: req.body.comments,
 //     });
 //     if (statusCreated) {
 //       res.status(201).json({ message: "Your Status is Saved", resourceStatus });
@@ -304,7 +316,6 @@ var elasticSearchStatus = async (req, res) => {
 //     var updateStatus = await ResourceStatusSchema.update(
 //       {
 //         status: req.body.status,
-//         comments: req.body.comments,
 //       },
 //       { where: { username: req.body.username, date: req.body.date } }
 //     );

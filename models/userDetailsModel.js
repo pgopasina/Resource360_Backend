@@ -1,5 +1,7 @@
-var Sequelize = require("sequelize");
-var Connection = require("../connection");
+const Sequelize = require("sequelize");
+const Connection = require("../connection");
+const Joi = require("joi");
+
 var userSchema = Connection.define(
   "User_Details",
   {
@@ -45,4 +47,14 @@ var userSchema = Connection.define(
   { timestamps: false } // Disables `createdAt` and `updatedAt`
 );
 
-module.exports = userSchema;
+const userSchemaValidation = Joi.object({
+  fullname: Joi.string().required(),
+  username: Joi.string().required(),
+  designation: Joi.string().required(),
+  email: Joi.string().email().required(),
+  password: Joi.string().required(),
+  reportsTo: Joi.string().required(),
+  shiftTime: Joi.string().required(),
+});
+
+module.exports = { userSchema, userSchemaValidation };

@@ -1,5 +1,5 @@
 const nodemailer = require("nodemailer");
-const cfig = require("../config"); // Assuming you have a config file for userPassword
+const cfig = require("../config");
 
 const sendMail = async (req, res) => {
   const { from, to, cc, subject, text } = req.body;
@@ -14,44 +14,42 @@ const sendMail = async (req, res) => {
     host: "smtppro.zoho.in",
     port: 465,
     secure: true,
-    requireTLS: true,
+    auth: {
+      user: cfig.userMail,
+      pass: cfig.userPassword,
+    },
     tls: {
       rejectUnauthorized: false,
     },
-    auth: {
-      user: from,
-      pass: cfig.userPassword,
-    },
-    // debug: true,
-    // logger: true,
   });
 
   try {
-    const info = await transporter.sendMail({
-      from: cfig.userMail,
-      // to: "vmarupu@miraclesoft.com, jadvani@miraclesoft.com",
-      // // cc:"daburi@miraclesoft.com",
+    const mailOptions = {
+      from: `${from} <${cfig.userMail}>`,
       to,
-      cc,
       subject,
       text,
-    });
+      ...(cc && { cc }),
+    };
+console.log("mailOptions",mailOptions);
+
+    const info = await transporter.sendMail(mailOptions);
 
     res.status(200).json({
       message: "Mail sent successfully",
-      info: info,
+      info,
     });
   } catch (error) {
     console.error("Error sending email:", error);
 
     res.status(500).json({
-      message: "Error sending email",
-      error: error.message,
+      message: "Failed to send email. Please try again later.",
     });
   }
 };
 
 module.exports = { sendMail };
+
 
 // const nodemailer = require('nodemailer');
 // const cron = require('node-cron');
