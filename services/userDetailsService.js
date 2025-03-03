@@ -1,7 +1,9 @@
 const { Op } = require("sequelize");
-const userSchema = require("../models/userDetailsModel");
+const {
+  userSchema,
+  userSchemaValidation,
+} = require("../models/userDetailsModel");
 const ResourceStatusSchema = require("../models/resourceStatusModel");
-const userSchemaValidation = require("../models/userDetailsModel");
 var userReg = async (req, res) => {
   try {
     const { error } = userSchemaValidation.validate(req.body);
@@ -61,6 +63,7 @@ var fetchAllUsers = async (req, res) => {
 var userLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
+
     const user = await userSchema.findOne({ where: { email, password } });
 
     if (!user) {
@@ -321,13 +324,16 @@ var userHierarchy = async (req, res) => {
     ) {
       const date = new Date();
       date.setDate(date.getDate() - 1);
-      const yesterday = date.toISOString().split("T")[0];
+      const offset = 5.5 * 60 * 60 * 1000;
+      const istDate = new Date(date.getTime() + offset);
+      const yesterday = istDate.toISOString().split("T")[0];
 
       const allStatuses = await ResourceStatusSchema.findAll({
         where: {
           date: yesterday,
         },
       });
+
       const managersHierarchy = managers
         .filter((manager) => manager.username === req.params.username)
         .map((manager) => ({

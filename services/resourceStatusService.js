@@ -2,7 +2,7 @@ const { Op } = require("sequelize");
 const resourceStatus = require("../models/resourceStatusModel");
 const ResourceStatusSchema = require("../models/resourceStatusModel");
 const aiSummarizingStatus = require("../services/genaiAPI");
-const userSchema = require("../models/userDetailsModel");
+const { userSchema } = require("../models/userDetailsModel");
 
 const upsertResourceStatus = async (req, res) => {
   try {

@@ -57,4 +57,7 @@ const userSchemaValidation = Joi.object({
   shiftTime: Joi.string().required(),
 });
 
-module.exports = { userSchema, userSchemaValidation };
+module.exports = {
+  userSchema,
+  userSchemaValidation,
+};

@@ -13,7 +13,7 @@ async function aiSummarizingStatus(hourlyStatus) {
 
     const prompt = `
 You are a professional assistant skilled in summarizing daily activities into concise and cohesive paragraphs.
-Using the provided hourly status updates, write a professional daily summary paragraph with a length between 300 and 500 characters. Avoid mentioning specific time slots and focus on presenting the activities smoothly and logically in a professional tone.
+Using the provided hourly status updates, write a professional daily summary paragraph with a length between 400 and 800 characters. Avoid mentioning specific time slots and focus on presenting the activities smoothly and logically in a professional tone.
 
 If the hourly status is empty or does not provide meaningful information, simply state: "No specific updates available in hourly status for today, So Unable to generate a summary."
 
